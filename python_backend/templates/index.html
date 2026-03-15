@@ -6,94 +6,206 @@
     <title>Live System Monitor</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+
+        /* Modern animated gradient background */
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #121212; 
-            color: white; 
-            text-align: center; 
-            padding-top: 30px; 
+            font-family: 'Inter', sans-serif; 
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(-45deg, #0f172a, #1e293b, #020617);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: #f8fafc; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 5vh;
         }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Header styling with a pulsing LIVE dot */
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 { 
+            font-weight: 800; 
+            font-size: 2.5rem;
+            letter-spacing: -1px;
+            margin-bottom: 10px;
+            background: -webkit-linear-gradient(#fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #10b981;
+            letter-spacing: 1px;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            margin-right: 8px;
+            box-shadow: 0 0 10px #10b981;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
         .container {
             display: flex;
             justify-content: center;
-            gap: 40px;
-            margin-top: 30px;
+            gap: 30px;
             flex-wrap: wrap;
+            width: 90%;
+            max-width: 1200px;
         }
+
+        /* Glassmorphism Cards */
         .box { 
-            background-color: #1e1e1e;
-            border: 2px solid #333; 
-            padding: 20px; 
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 30px; 
             width: 450px; 
-            border-radius: 15px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            border-radius: 24px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            transition: transform 0.3s ease, border-color 0.3s ease;
         }
-        /* Neon accents for the boxes */
-        #cpu-box { border-top: 4px solid #00E676; }
-        #ram-box { border-top: 4px solid #00B0FF; }
+
+        .box:hover {
+            transform: translateY(-5px);
+        }
+
+        #cpu-box:hover { border-color: rgba(16, 185, 129, 0.4); box-shadow: 0 20px 40px rgba(16, 185, 129, 0.1);}
+        #ram-box:hover { border-color: rgba(56, 189, 248, 0.4); box-shadow: 0 20px 40px rgba(56, 189, 248, 0.1);}
         
-        h1 { color: #ffffff; letter-spacing: 1px;}
-        h2 { margin-top: 0; color: #aaaaaa; font-size: 18px;}
-        .value { font-size: 32px; font-weight: bold; margin-bottom: 15px;}
-        #cpu-val { color: #00E676; }
-        #ram-val { color: #00B0FF; }
+        h2 { 
+            margin-top: 0; 
+            color: #94a3b8; 
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        .value { 
+            font-size: 3.5rem; 
+            font-weight: 800; 
+            margin-bottom: 20px;
+            line-height: 1;
+        }
+
+        #cpu-val { color: #10b981; text-shadow: 0 0 20px rgba(16, 185, 129, 0.4); }
+        #ram-val { color: #38bdf8; text-shadow: 0 0 20px rgba(56, 189, 248, 0.4); }
         
-        canvas { width: 100% !important; height: 200px !important; }
+        canvas { width: 100% !important; height: 180px !important; }
     </style>
 </head>
 <body>
 
-    <h1>🚀 Remote System Health Dashboard</h1>
+    <header>
+        <h1>System Health Telemetry</h1>
+        <div class="status-badge">
+            <div class="pulse-dot"></div>
+            RECEIVING DATA ON PORT 5050
+        </div>
+    </header>
     
     <div class="container">
         <div class="box" id="cpu-box">
-            <h2>CPU USAGE</h2>
+            <h2>Logical Processor</h2>
             <div class="value" id="cpu-val">0.00%</div>
             <canvas id="cpuChart"></canvas>
         </div>
         
         <div class="box" id="ram-box">
-            <h2>RAM USAGE</h2>
+            <h2>Physical Memory</h2>
             <div class="value" id="ram-val">0.00%</div>
             <canvas id="ramChart"></canvas>
         </div>
     </div>
 
     <script>
-        // --- 1. Setup the Chart Configurations ---
-        const createChart = (ctx, color, bgColor) => {
+        // Advanced Chart Setup with Gradients
+        const createChart = (ctx, colorStr, label) => {
+            // Create a gradient fill under the line
+            let gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 200);
+            gradient.addColorStop(0, colorStr.replace('1)', '0.5)')); 
+            gradient.addColorStop(1, colorStr.replace('1)', '0.0)')); 
+
             return new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: [], // X-axis (Time)
+                    labels: [], 
                     datasets: [{
-                        label: 'Usage %',
-                        data: [], // Y-axis (Percentage)
-                        borderColor: color,
-                        backgroundColor: bgColor,
-                        borderWidth: 2,
+                        label: label,
+                        data: [], 
+                        borderColor: colorStr,
+                        backgroundColor: gradient,
+                        borderWidth: 3,
                         fill: true,
-                        tension: 0.4, // Makes the line smooth/curved
-                        pointRadius: 0 // Hides the dots on the line
+                        tension: 0.4, 
+                        pointRadius: 0,
+                        pointHoverRadius: 6
                     }]
                 },
                 options: {
                     responsive: true,
                     scales: {
-                        y: { min: 0, max: 100, grid: { color: '#333' } },
-                        x: { display: false } // Hide the time labels to keep it clean
+                        y: { 
+                            min: 0, 
+                            max: 100, 
+                            grid: { color: 'rgba(255, 255, 255, 0.05)', borderDash: [5, 5] },
+                            ticks: { color: '#64748b', font: { family: 'Inter' } }
+                        },
+                        x: { display: false } 
                     },
-                    plugins: { legend: { display: false } },
-                    animation: { duration: 0 } // Disable default animation so it doesn't bounce
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleFont: { family: 'Inter', size: 13 },
+                            bodyFont: { family: 'Inter', size: 14, weight: 'bold' },
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: false
+                        }
+                    },
+                    animation: { duration: 0 },
+                    interaction: { mode: 'index', intersect: false }
                 }
             });
         };
 
-        // Initialize the two charts
-        const cpuChart = createChart(document.getElementById('cpuChart'), '#00E676', 'rgba(0, 230, 118, 0.1)');
-        const ramChart = createChart(document.getElementById('ramChart'), '#00B0FF', 'rgba(0, 176, 255, 0.1)');
+        // Initialize charts (Emerald Green for CPU, Sky Blue for RAM)
+        const cpuChart = createChart(document.getElementById('cpuChart'), 'rgba(16, 185, 129, 1)', 'CPU Usage');
+        const ramChart = createChart(document.getElementById('ramChart'), 'rgba(56, 189, 248, 1)', 'RAM Usage');
 
-        // --- 2. Fetch Data and Update Charts ---
+        // Fetch Data Loop
         setInterval(() => {
             fetch('/api/data')
                 .then(response => response.json())
@@ -101,33 +213,31 @@
                     let cpu = parseFloat(data.cpu).toFixed(2);
                     let ram = parseFloat(data.ram).toFixed(2);
                     
-                    // Update the text numbers
                     document.getElementById('cpu-val').innerText = cpu + "%";
                     document.getElementById('ram-val').innerText = ram + "%";
 
                     let timeNow = new Date().toLocaleTimeString();
 
-                    // Update CPU Chart (Keep only the last 20 data points)
+                    // Update CPU
                     cpuChart.data.labels.push(timeNow);
                     cpuChart.data.datasets[0].data.push(cpu);
-                    if (cpuChart.data.labels.length > 20) {
+                    if (cpuChart.data.labels.length > 25) {
                         cpuChart.data.labels.shift();
                         cpuChart.data.datasets[0].data.shift();
                     }
                     cpuChart.update();
 
-                    // Update RAM Chart (Keep only the last 20 data points)
+                    // Update RAM
                     ramChart.data.labels.push(timeNow);
                     ramChart.data.datasets[0].data.push(ram);
-                    if (ramChart.data.labels.length > 20) {
+                    if (ramChart.data.labels.length > 25) {
                         ramChart.data.labels.shift();
                         ramChart.data.datasets[0].data.shift();
                     }
                     ramChart.update();
                 })
                 .catch(error => console.error("Error fetching data:", error));
-        }, 1000); // Runs every 1 second
+        }, 1000); 
     </script>
-
 </body>
 </html>
