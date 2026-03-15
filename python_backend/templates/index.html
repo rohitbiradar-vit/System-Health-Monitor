@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live System Monitor</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #121212; 
+            color: white; 
+            text-align: center; 
+            padding-top: 30px; 
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        .box { 
+            background-color: #1e1e1e;
+            border: 2px solid #333; 
+            padding: 20px; 
+            width: 450px; 
+            border-radius: 15px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        /* Neon accents for the boxes */
+        #cpu-box { border-top: 4px solid #00E676; }
+        #ram-box { border-top: 4px solid #00B0FF; }
+        
+        h1 { color: #ffffff; letter-spacing: 1px;}
+        h2 { margin-top: 0; color: #aaaaaa; font-size: 18px;}
+        .value { font-size: 32px; font-weight: bold; margin-bottom: 15px;}
+        #cpu-val { color: #00E676; }
+        #ram-val { color: #00B0FF; }
+        
+        canvas { width: 100% !important; height: 200px !important; }
+    </style>
+</head>
+<body>
+
+    <h1>🚀 Remote System Health Dashboard</h1>
+    
+    <div class="container">
+        <div class="box" id="cpu-box">
+            <h2>CPU USAGE</h2>
+            <div class="value" id="cpu-val">0.00%</div>
+            <canvas id="cpuChart"></canvas>
+        </div>
+        
+        <div class="box" id="ram-box">
+            <h2>RAM USAGE</h2>
+            <div class="value" id="ram-val">0.00%</div>
+            <canvas id="ramChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Setup the Chart Configurations ---
+        const createChart = (ctx, color, bgColor) => {
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [], // X-axis (Time)
+                    datasets: [{
+                        label: 'Usage %',
+                        data: [], // Y-axis (Percentage)
+                        borderColor: color,
+                        backgroundColor: bgColor,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4, // Makes the line smooth/curved
+                        pointRadius: 0 // Hides the dots on the line
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { min: 0, max: 100, grid: { color: '#333' } },
+                        x: { display: false } // Hide the time labels to keep it clean
+                    },
+                    plugins: { legend: { display: false } },
+                    animation: { duration: 0 } // Disable default animation so it doesn't bounce
+                }
+            });
+        };
+
+        // Initialize the two charts
+        const cpuChart = createChart(document.getElementById('cpuChart'), '#00E676', 'rgba(0, 230, 118, 0.1)');
+        const ramChart = createChart(document.getElementById('ramChart'), '#00B0FF', 'rgba(0, 176, 255, 0.1)');
+
+        // --- 2. Fetch Data and Update Charts ---
+        setInterval(() => {
+            fetch('/api/data')
+                .then(response => response.json())
+                .then(data => {
+                    let cpu = parseFloat(data.cpu).toFixed(2);
+                    let ram = parseFloat(data.ram).toFixed(2);
+                    
+                    // Update the text numbers
+                    document.getElementById('cpu-val').innerText = cpu + "%";
+                    document.getElementById('ram-val').innerText = ram + "%";
+
+                    let timeNow = new Date().toLocaleTimeString();
+
+                    // Update CPU Chart (Keep only the last 20 data points)
+                    cpuChart.data.labels.push(timeNow);
+                    cpuChart.data.datasets[0].data.push(cpu);
+                    if (cpuChart.data.labels.length > 20) {
+                        cpuChart.data.labels.shift();
+                        cpuChart.data.datasets[0].data.shift();
+                    }
+                    cpuChart.update();
+
+                    // Update RAM Chart (Keep only the last 20 data points)
+                    ramChart.data.labels.push(timeNow);
+                    ramChart.data.datasets[0].data.push(ram);
+                    if (ramChart.data.labels.length > 20) {
+                        ramChart.data.labels.shift();
+                        ramChart.data.datasets[0].data.shift();
+                    }
+                    ramChart.update();
+                })
+                .catch(error => console.error("Error fetching data:", error));
+        }, 1000); // Runs every 1 second
+    </script>
+
+</body>
+</html>
