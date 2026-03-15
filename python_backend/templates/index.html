@@ -134,6 +134,21 @@
             RECEIVING DATA ON PORT 5050
         </div>
     </header>
+
+    <div style="text-align: center; margin-bottom: 30px; width: 100%; max-width: 800px;">
+        <button id="ai-btn" onclick="runDiagnostics()" style="
+            background: linear-gradient(90deg, #10b981, #0ea5e9);
+            color: white; border: none; padding: 12px 24px; border-radius: 8px;
+            font-size: 1rem; font-weight: 600; cursor: pointer; font-family: 'Inter';
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); transition: transform 0.2s;
+        ">✨ Run AI System Analysis</button>
+        
+        <div id="ai-output" style="
+            margin-top: 15px; padding: 15px; background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px;
+            color: #e2e8f0; font-size: 0.95rem; line-height: 1.5; display: none;
+        ">Waiting for AI...</div>
+    </div>
     
     <div class="container">
         <div class="box" id="cpu-box">
@@ -150,6 +165,27 @@
     </div>
 
     <script>
+
+        // Function to call the Python AI route
+        function runDiagnostics() {
+            const btn = document.getElementById('ai-btn');
+            const output = document.getElementById('ai-output');
+            
+            btn.innerText = "⏳ Analyzing...";
+            output.style.display = "block";
+            output.innerText = "Gathering telemetry data and querying the LLM...";
+
+            fetch('/api/diagnose')
+                .then(response => response.json())
+                .then(data => {
+                    output.innerText = data.diagnosis;
+                    btn.innerText = "✨ Run AI System Analysis";
+                })
+                .catch(error => {
+                    output.innerText = "Error connecting to backend.";
+                    btn.innerText = "✨ Run AI System Analysis";
+                });
+        }
         // Advanced Chart Setup with Gradients
         const createChart = (ctx, colorStr, label) => {
             // Create a gradient fill under the line
